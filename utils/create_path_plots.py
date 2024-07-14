@@ -15,7 +15,7 @@ def create_path_plots(
     figure. Above which it plots the x,y flight history of the agent.
     It colours this graph in accordance with the normalized reward 
     provided. It saves the figure in the provided folder. It does this
-    for each of the runs in the observation history
+    for each of the runs in the observation history.
 
     @params:
         - folder_path (str): Path to output folder.
@@ -25,7 +25,7 @@ def create_path_plots(
         - env_data (dict): Environment configuration.
             See config/default_env.yaml for more info.
             In theory, it only needs to contain the window dimensions
-            and preferably the background and floor data
+            and preferably the background and floor data.
     """
     for iteration, observations in observation_history.items():
         vertices = [(x, y, r) for (x, y, _, _), r, _, _, _ in observations]

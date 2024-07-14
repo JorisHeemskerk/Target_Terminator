@@ -39,7 +39,7 @@ def make(render_mode: str=None) -> BaseEnv:
     
     @params:
         - render_mode (str): Render mode, to make gui, keyboard gui, or
-        neither
+        neither.
     """
     #TODO: add configs to make as args or kwargs or something.
     plane_config = "config/i-16_falangist.yaml"

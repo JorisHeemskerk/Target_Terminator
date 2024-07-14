@@ -2,7 +2,7 @@
 ##            Default environment yaml file             ##
 ##########################################################
 # NOTE: See validation_templates/environment_template.py # 
-#       for the parameter restrictions                   #
+#             for the parameter restrictions             #
 ##########################################################
 
 window_dimensions : [1280, 720]

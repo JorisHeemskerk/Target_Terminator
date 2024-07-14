@@ -1,5 +1,5 @@
 # TODO: REMOVE!!!!
-#(currently not removed for precious plane configs)
+#(currently not removed for previous plane configs)
 
 # SCREEN_HEIGHT     = 720
 # SCREEN_WIDTH      = 1280
