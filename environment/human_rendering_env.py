@@ -3,9 +3,6 @@ import os
 import numpy as np
 
 from environment.base_env import BaseEnv
-from simulation.deprecated.plane import Plane
-from simulation.deprecated.target import Target
-from simulation.deprecated.ground import Ground
 
 
 class HumanRenderingEnv(BaseEnv):
@@ -31,10 +28,7 @@ class HumanRenderingEnv(BaseEnv):
     """
 
     def __init__(
-        self, 
-        plane_config: str="config/i-16_falangist.yaml",
-        env_config: str="config/default_env.yaml",
-        target_config: str="config/default_target.yaml"
+        self
     )-> None:
         """
         Initializer for BaseEnv class.
@@ -52,71 +46,45 @@ class HumanRenderingEnv(BaseEnv):
         os.environ['SDL_VIDEO_WINDOW_POS'] = f"{0},{0}"
         pygame.init()
             
-        super().__init__(
-            plane_config=plane_config,
-            env_config=env_config,
-            target_config=target_config
-        )
-
-        # sprite data is not mandatory in config, 
-        # so we check these here
-        assert "sprite" in self._plane_data and \
-            "side_view_dir" in self._plane_data["sprite"] and \
-            "top_view_dir" in self._plane_data["sprite"], \
-            "Either `sprite`, `sprite : side_view_dir`, or `sprite : "\
-            "top_view_dir` are not present in plane data."
-        assert "sprite" in self._target_data, "`sprite` key not in target data"
-        assert "sprite" in self._env_data["ground"], \
-            "`sprite` key not in `ground` field in target data"
-        assert "sprite" in self._env_data["background"], \
-            "`sprite` key is not in background field in target data"
+        super().__init__()
         
-        self.screen = pygame.display.set_mode(
-            size=self._env_data["window_dimensions"],
-            flags=pygame.DOUBLEBUF
-        )
-        # self.font = pygame.font.SysFont(None, 24)
+        self.screen = pygame.display.set_mode((1280, 720))
+        
         pygame.display.set_caption('Target terminator')
 
-        self._create_background()
+        self._create_sprites()
 
-    def _create_floor(self)-> None:
-        """
-        Create floor object for self (with sprite).
-
-        Use environment data to create Ground object.
-        """
-        self._floor = Ground(self._env_data, True)
-
-    def _create_agent(self)-> None:
-        """
-        Create agent object for self (with sprite).
-
-        Use plane and environment data to create Plane object.
-        """
-        self._agent = Plane(self._plane_data, True)
-
-    def _create_target(self)-> None:
-        """
-        Create target object for self (with sprite).
-
-        Use target data to create Target object.
-        """
-        self._target = Target(self._target_data, True)
-
-
-    def _create_background(self)-> None:
+    def _create_sprites(self)-> None:
         """
         Create background object for self.
 
         Use environment data to create background object.
         """
-        self._background = pygame.image.load(
-            self._env_data["background"]["sprite"]
+        self._background_sprite = pygame.image.load(
+            "assets/background.png"
         )
-        self._background = pygame.transform.scale(
-            self._background,
-            self._env_data["window_dimensions"]
+        self._background_sprite = pygame.transform.scale(
+            self._background_sprite,
+            pygame.display.get_surface().get_size()
+        )
+
+        self._target_sprite = pygame.transform.scale(
+            pygame.image.load("assets/target.png"), 
+            [40, 40]
+        )
+
+        self._bullet_sprite = pygame.transform.scale(
+            pygame.image.load("assets/bullet.png"),
+            [10, 10]
+        )
+
+        self._plane_sprite = pygame.image.load(
+                "assets/i16_falangist.png"
+        )
+
+        self._plane_sprite = pygame.transform.scale(
+            self._plane_sprite,
+            [24, 12]
         )
 
     def _render(self)-> None:
@@ -124,14 +92,36 @@ class HumanRenderingEnv(BaseEnv):
         Render function for all of the graphical elements of the 
         environment.
         """
-        self.screen.blit(self._background, (0, 0))
-        self.screen.blit(self._floor.sprite, [0, self._floor.coll_elevation])
-        self.screen.blit(self._target.sprite, self._target.rect)
+        self.screen.blit(self._background_sprite, (0, 0))
+        # weggelaten, weet niet zeker of er rekening is gehouden met het bestaan van een vloer
+        # self.screen.blit(self._floor.sprite, [0, self._floor.coll_elevation])
+        self.screen.blit(
+            self._target_sprite, 
+            self.entities.targets.vectors[:, 3][0]
+        )
 
-        for bullet in self._agent.bullets:
-            self.screen.blit(bullet.sprite, bullet.rect)
+        for bullet_vector, bullet_scalar in zip(
+            self.entities.bullets.vectors,
+            self.entities.bullets.scalars
+            ):
+            if bullet_scalar[11] == -1:
+                continue
+            self.screen.blit(
+                pygame.transform.rotate(
+                    self._bullet_sprite,
+                    #TODO: pitch van de bullet nog niet goed doorgegeven
+                    bullet_scalar[8]
+                ),
+                bullet_vector[3]
+            )
 
-        self.screen.blit(self._agent.sprite, self._agent.rect)
+        self.screen.blit(
+            pygame.transform.rotate(
+                self._plane_sprite,
+                self.entities.airplanes.scalars[0][8]
+            ),
+            self.entities.airplanes.vectors[0][3]
+        )
         
         pygame.display.flip()
         

@@ -1,17 +1,16 @@
-import yaml
+# import yaml
 import datetime
 import json
 import os
 import numpy as np
+import pygame
 from cerberus import Validator
 
-from simulation.deprecated.plane import Plane
-from simulation.deprecated.target import Target
-from simulation.deprecated.ground import Ground
+from simulation.entities import Entities
 from utils.numpy_encoder import NumpyEncoder
 from utils.create_path_plots import create_path_plots
-import config.validation_templates as templates
-import utils.collision as col
+# import config.validation_templates as templates
+# import utils.collision as col
 
 
 class BaseEnv():
@@ -35,92 +34,43 @@ class BaseEnv():
     + close()-> None
         Closes the environment and thereby outputs its entire history.
     """
-
     def __init__(
         self, 
-        plane_config: str="config/i-16_falangist.yaml",
-        env_config: str="config/default_env.yaml",
-        target_config: str="config/default_target.yaml",
         seed: int=42
     )-> None:
-        """
-        Initializer for BaseEnv class.
-
-        @params:
-            - plane_config (str): Path to yaml file with plane 
-            configuration. See config/i-16_falangist.yaml for more info.
-            - env_config (str): Path to yaml file with environment 
-            configuration. See config/default_env.yaml for more info.
-            - target_config (str): Path to yaml file with target 
-            configuration. See config/default_target.yaml for more 
-            info.
-            - seed (int): seed used to spawn in the agent and target. 
-        """
         np.random.seed(seed)
 
         # for saving the observation history, used in self.close()
         self._current_iteration = 0
         self._observation_history = {self._current_iteration : []}
 
-        # delta with which to update the environment each tick
-        self._dt = 1 / 60
+        # self.screen = pygame.display.set_mode((1280, 720))
+        self.clock = pygame.time.Clock()
+        self._dt = 0
+        
+        self._create_entities()
 
-        # validate all of the provided config files
-        validator = Validator()
-        with open(plane_config, 'r') as stream:
-            self._plane_data = yaml.safe_load(stream)
-        assert validator.validate(
-            self._plane_data, 
-            templates.PLANE_TEMPLATE
-        ), f"A validation error occurred in the plane data: {validator.errors}"
+    def _create_entities(self)-> None:
+        scalars = np.array(
+            #   0       1       2       3       4       5       6       7       8   9   10  11  12  13
+            [[  1200,   0.6,    100,    0.32,   0.5,    300,    100,    100,    0,  6,  0,  0,  -1, 0], 
+            [  0,      0,      0,      0,      0,      0,      0,      0,      0,  10, 0,  1,  -1, 0]]
+        )
 
-        with open(env_config, 'r') as stream:
-            self._env_data = yaml.safe_load(stream)
-        assert validator.validate(
-            self._env_data, 
-            templates.ENVIRONMENT_TEMPLATE
-        ), f"A validation error occurred in the env data: {validator.errors}"
+        vectors = np.array(
+            #   0               1               2       3             4       5       6       7       8       9
+            [[  [-15.0, -0.95], [19.0, 1.4],    [100,0],[100, 300],   [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]],
+            [  [0,0],          [0,0],          [0,0],  [800, 500],    [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]]]
+        )
 
-        with open(target_config, 'r') as stream:
-            self._target_data = yaml.safe_load(stream)
-        assert validator.validate(
-            self._target_data, 
-            templates.TARGET_TEMPLATE
-        ),f"A validation error occurred in the target data: {validator.errors}"
+        boundaries = np.array(
+            [
+                [0,  1280   ],
+                [0,  720 ]
+            ]
+        )
 
-        # reserve memory for necessary member objects
-        self._floor = None
-        self._agent = None
-        self._target = None
-
-        # initialize member objects
-        self._create_floor()
-        self._create_agent()
-        self._create_target()
-
-    def _create_floor(self)-> None:
-        """
-        Create floor object for self.
-
-        Use environment data to create Ground object.
-        """
-        self._floor = Ground(self._env_data)
-
-    def _create_agent(self)-> None:
-        """
-        Create agent object for self.
-
-        Use plane and environment data to create Plane object.
-        """
-        self._agent = Plane(self._plane_data)
-
-    def _create_target(self)-> None:
-        """
-        Create target object for self.
-
-        Use target data to create Target object.
-        """
-        self._target = Target(self._target_data)
+        self.entities = Entities(scalars, vectors, 1000, boundaries)
 
     def _calculate_reward(self, state: np.ndarray)-> float:
         """
@@ -143,8 +93,9 @@ class BaseEnv():
         @returns:
             - float with reward.
         """
-        direction_to_target = self._target.rect.center - state[:2]
-
+        direction_to_target = self.entities.targets.vectors[:, 3][0] - \
+            state[:2]
+        
         unit_vector_to_target = direction_to_target / \
             np.linalg.norm(direction_to_target)
 
@@ -163,12 +114,7 @@ class BaseEnv():
         @returns:
             - boolean; True if terminal, False if not
         """
-        return col.check_bullet_collision(
-            self._agent, 
-            self._target,
-            self._floor.coll_elevation,
-            self._env_data["window_dimensions"][0]
-        )
+        return np.all(self.entities.targets.scalars[:, 12] != -1)
     
     def _check_if_truncated(self)-> bool:
         """
@@ -180,15 +126,7 @@ class BaseEnv():
         @returns:
             - boolean; True if truncated, False if not
         """
-        agent_rect = self._agent.rect
-        window_width = self._env_data["window_dimensions"][0]
-        return (
-            agent_rect.bottom >= self._floor.coll_elevation or
-            agent_rect.top < -10 or
-            agent_rect.left < -10 or
-            agent_rect.right > window_width + 10 or
-            col.check_target_agent_collision(self._target, self._agent)
-        )
+        return np.all(self.entities.airplanes.scalars[:, 12] != -1)
 
     def _calculate_observation(
             self
@@ -217,7 +155,10 @@ class BaseEnv():
              - bool with is_truncated
              - dict with info (always empty)
         """
-        state = np.append(self._agent.rect.center, self._agent.v)
+        pos = self.entities.airplanes.vectors[:, 3]
+        v = self.entities.airplanes.vectors[:, 2]
+        state = np.concatenate((pos, v), axis=None)
+        
         is_terminated = self._check_if_terminated()
         is_truncated = self._check_if_truncated()
         reward = self._calculate_reward(state)
@@ -259,35 +200,10 @@ class BaseEnv():
         @returns:
             - np.ndarray with observation of resulting conditions
         """
-        # do nothing
-        if action == 0:
-            pass
-        # adjust pitch upwards
-        elif action == 1:
-            self._agent.adjust_pitch(self._dt)
-        # adjust pitch downwards
-        elif action == 2:
-            self._agent.adjust_pitch(-self._dt)
-        # increase throttle, to a max of 100
-        elif action == 3:
-            if self._agent.throttle < 100:
-                self._agent.throttle += self._dt * 100
-        # decrease throttle, to a min of 0
-        elif action == 4:
-            if self._agent.throttle > 0:
-                self._agent.throttle -= self._dt * 100
-        # shoot a bullet
-        elif action == 5:
-            self._agent.shoot()
-        # any other actions are invalid
-        else:
-            raise ValueError(
-                f"Provided with action {action}, "
-                "which is not one of [0,1,2,3,4,5]"
-            )
-        
-        # update the agent with adjusted settings
-        self._agent.tick(self._dt)
+        actions = np.array([[0,action]])
+        self.entities.tick(self._dt, actions)
+
+        self._dt = self.clock.tick(60) / 1000
 
         # calculate, save, and return observation in current conditions
         observation = self._calculate_observation()
@@ -315,15 +231,16 @@ class BaseEnv():
             environment, but is always empty.
         """
         np.random.seed(seed)
-        self._create_agent()
-        self._create_target()
+        self._create_entities()
 
         self._current_iteration += 1
         self._observation_history[self._current_iteration] = []
 
         # the agent's current coordinates are defined by the centre of 
         # its rect
-        return np.append(self._agent.rect.center, self._agent.v), {}
+        pos = self.entities.airplanes.vectors[:, 3]
+        v = self.entities.airplanes.vectors[:, 2]
+        return np.concatenate((pos, v), axis=None), {}
 
     def close(
         self, 
@@ -359,10 +276,10 @@ class BaseEnv():
                 json.dump(self._observation_history, outfile, cls=NumpyEncoder)
 
         # create all the graphs and save them to the `folder_path`
-        if save_figs:
-            create_path_plots(
-                folder_path, 
-                self._observation_history, 
-                self._env_data,
-                figs_stride
-            )
+        # if save_figs:
+        #     create_path_plots(
+        #         folder_path, 
+        #         self._observation_history, 
+        #         self._env_data,
+        #         figs_stride
+        #     )
