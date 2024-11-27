@@ -45,8 +45,8 @@ class BaseEnv():
         self._observation_history = {self._current_iteration : []}
 
         # self.screen = pygame.display.set_mode((1280, 720))
-        self.clock = pygame.time.Clock()
-        self._dt = 0
+        # self.clock = pygame.time.Clock()
+        self._dt = 1/60
         
         self._create_entities()
 
@@ -54,18 +54,18 @@ class BaseEnv():
         scalars = np.array(
             #   0       1       2       3       4       5       6       7       8   9   10  11  12  13
             [[  1200,   0.6,    100,    0.32,   0.5,    300,    100,    100,    0,  6,  0,  0,  -1, 0], 
-            [  0,      0,      0,      0,      0,      0,      0,      0,      0,  10, 0,  1,  -1, 0]]
+             [  0,      0,      0,      0,      0,      0,      0,      0,      0,  10, 0,  1,  -1, 0]]
         )
 
         vectors = np.array(
             #   0               1               2       3             4       5       6       7       8       9
             [[  [-15.0, -0.95], [19.0, 1.4],    [100,0],[100, 300],   [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]],
-            [  [0,0],          [0,0],          [0,0],  [800, 500],    [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]]]
+             [  [0,0],          [0,0],          [0,0],  [800, 500],   [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]]]
         )
 
         boundaries = np.array(
             [
-                [0,  1280   ],
+                [0,  1280],
                 [0,  720 ]
             ]
         )
@@ -93,8 +93,7 @@ class BaseEnv():
         @returns:
             - float with reward.
         """
-        direction_to_target = self.entities.targets.vectors[:, 3][0] - \
-            state[:2]
+        direction_to_target = self.entities.targets.vectors[0, 3] - state[:2]
         
         unit_vector_to_target = direction_to_target / \
             np.linalg.norm(direction_to_target)
@@ -155,8 +154,8 @@ class BaseEnv():
              - bool with is_truncated
              - dict with info (always empty)
         """
-        pos = self.entities.airplanes.vectors[:, 3]
-        v = self.entities.airplanes.vectors[:, 2]
+        pos = self.entities.airplanes.vectors[0, 3]
+        v = self.entities.airplanes.vectors[0, 2]
         state = np.concatenate((pos, v), axis=None)
         
         is_terminated = self._check_if_terminated()
@@ -200,10 +199,10 @@ class BaseEnv():
         @returns:
             - np.ndarray with observation of resulting conditions
         """
-        actions = np.array([[0,action]])
+        actions = np.array([[0, action]])
         self.entities.tick(self._dt, actions)
 
-        self._dt = self.clock.tick(60) / 1000
+        # self._dt = self.clock.tick(60) / 1000
 
         # calculate, save, and return observation in current conditions
         observation = self._calculate_observation()
@@ -238,8 +237,8 @@ class BaseEnv():
 
         # the agent's current coordinates are defined by the centre of 
         # its rect
-        pos = self.entities.airplanes.vectors[:, 3]
-        v = self.entities.airplanes.vectors[:, 2]
+        pos = self.entities.airplanes.vectors[0, 3]
+        v = self.entities.airplanes.vectors[0, 2]
         return np.concatenate((pos, v), axis=None), {}
 
     def close(

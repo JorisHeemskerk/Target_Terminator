@@ -115,6 +115,7 @@ class HumanRenderingEnv(BaseEnv):
                 bullet_vector[3]
             )
 
+        #TODO: alle planes in blitten, pas aan zoals bullet aangepast
         self.screen.blit(
             pygame.transform.rotate(
                 self._plane_sprite,
