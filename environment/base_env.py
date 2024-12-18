@@ -1,16 +1,14 @@
-# import yaml
+import yaml
 import datetime
 import json
 import os
 import numpy as np
-import pygame
 from cerberus import Validator
 
 from simulation.entities import Entities
 from utils.numpy_encoder import NumpyEncoder
 from utils.create_path_plots import create_path_plots
-# import config.validation_templates as templates
-# import utils.collision as col
+import config.validation_templates as templates
 
 
 class BaseEnv():
@@ -36,6 +34,9 @@ class BaseEnv():
     """
     def __init__(
         self, 
+        plane_config: str="config/i-16_falangist.yaml",
+        env_config: str="config/default_env.yaml",
+        target_config: str="config/default_target.yaml",
         seed: int=42
     )-> None:
         np.random.seed(seed)
@@ -44,33 +45,97 @@ class BaseEnv():
         self._current_iteration = 0
         self._observation_history = {self._current_iteration : []}
 
-        # self.screen = pygame.display.set_mode((1280, 720))
-        # self.clock = pygame.time.Clock()
         self._dt = 1/60
+        
+        # validate all of the provided config files
+        validator = Validator()
+        with open(plane_config, 'r') as stream:
+            self._plane_data = yaml.safe_load(stream)
+        assert validator.validate(
+            self._plane_data, 
+            templates.PLANE_TEMPLATE
+        ), f"A validation error occurred in the plane data: {validator.errors}"
+
+        with open(env_config, 'r') as stream:
+            self._env_data = yaml.safe_load(stream)
+        assert validator.validate(
+            self._env_data, 
+            templates.ENVIRONMENT_TEMPLATE
+        ), f"A validation error occurred in the env data: {validator.errors}"
+
+        with open(target_config, 'r') as stream:
+            self._target_data = yaml.safe_load(stream)
+        assert validator.validate(
+            self._target_data, 
+            templates.TARGET_TEMPLATE
+        ),f"A validation error occurred in the target data: {validator.errors}"
+
+        # reserve memory for necessary member objects
+        self.entities = None
         
         self._create_entities()
 
     def _create_entities(self)-> None:
-        scalars = np.array(
-            #   0       1       2       3       4       5       6       7       8   9   10  11  12  13
-            [[  1200,   0.6,    100,    0.32,   0.5,    300,    100,    100,    0,  6,  0,  0,  -1, 0], 
-             [  0,      0,      0,      0,      0,      0,      0,      0,      0,  10, 0,  1,  -1, 0]]
-        )
+        agent_scalars, agent_vectors = self._create_agent()
+        target_scalars, target_vectors = self._create_target()
+        scalars = np.array([agent_scalars, target_scalars])
 
-        vectors = np.array(
-            #   0               1               2       3             4       5       6       7       8       9
-            [[  [-15.0, -0.95], [19.0, 1.4],    [100,0],[100, 300],   [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]],
-             [  [0,0],          [0,0],          [0,0],  [800, 500],   [0,0],  [0,0],  [0,0],  [0,0],  [0,0],  [0,0]]]
-        )
+        vectors = np.array([agent_vectors, target_vectors])
+
+        window_dimensions = self._env_data["window_dimensions"]
 
         boundaries = np.array(
             [
-                [0,  1280],
-                [0,  720 ]
+                [0,  window_dimensions[0]],
+                [0,  window_dimensions[1]]
             ]
         )
-
         self.entities = Entities(scalars, vectors, 1000, boundaries)
+
+    def _create_agent(self)-> tuple[np.ndarray, np.ndarray]:
+        """
+        Create agent object for self.
+
+        Use plane adata to create Plane object.
+        """
+        scalars = np.array(list(self._plane_data["properties"].values())[:10])
+        # the extra data is [aoa_degree, entity_type, coll_flag, debug]
+        scalars = np.concatenate((scalars, np.array([0, 0, -1, 0])))
+
+        vectors = np.array(list(self._plane_data["properties"].values())[10:])
+        # The extra data is
+        # [v_uv, f_gravity, f_engine, f_drag, f_lift, pitch_uv]
+        vectors = np.concatenate((vectors, np.zeros(shape=(6,2), dtype=float)))
+
+        return scalars, vectors
+
+    def _create_target(self)-> tuple[np.ndarray, np.ndarray]:
+        """
+        Create target object for self.
+
+        Use target data to create Target object.
+        """
+        scalars = np.array(list(self._target_data.values())[3])
+        # the only data needed is the collision radius
+        scalars = np.concatenate(
+            (
+                np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                np.array([scalars]),
+                np.array([0, 1, -1, 0])
+            )
+        )
+
+        vectors = np.array(list(self._target_data.values())[2])
+        # the only data needed is the position
+        vectors = np.concatenate(
+            (
+                np.zeros(shape=(3,2), dtype=float),
+                np.array([vectors]),
+                np.zeros(shape=(6,2), dtype=float)
+            )
+        )
+
+        return scalars, vectors
 
     def _calculate_reward(self, state: np.ndarray)-> float:
         """
@@ -202,8 +267,6 @@ class BaseEnv():
         actions = np.array([[0, action]])
         self.entities.tick(self._dt, actions)
 
-        # self._dt = self.clock.tick(60) / 1000
-
         # calculate, save, and return observation in current conditions
         observation = self._calculate_observation()
         self._observation_history[self._current_iteration].append(observation)
@@ -275,10 +338,10 @@ class BaseEnv():
                 json.dump(self._observation_history, outfile, cls=NumpyEncoder)
 
         # create all the graphs and save them to the `folder_path`
-        # if save_figs:
-        #     create_path_plots(
-        #         folder_path, 
-        #         self._observation_history, 
-        #         self._env_data,
-        #         figs_stride
-        #     )
+        if save_figs:
+            create_path_plots(
+                folder_path, 
+                self._observation_history, 
+                self._env_data,
+                figs_stride
+            )

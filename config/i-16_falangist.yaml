@@ -8,23 +8,26 @@
 sprite:
     side_view_dir : "assets/i16_falangist.png"
     top_view_dir  : "assets/i16_falangist_top.png"
+    size : [24, 12] # in pixels voor de sprite
 properties:
+    # scalars
     mass : 1200
-    engine_force : 300
-    agility : 100
     drag_constant : 0.6
-    lift_constant : 100
-    critical_aoa_lower_bound : [-15.0, -0.95] # aoa = angle of attack
-    critical_aoa_higher_bound : [19.0, 1.4]
+    lift_constant : 100 #FIXME: was ooit 20, nu 100  
     lift_coefficient_aoa_0 : 0.32 # lift coefficient at aoa 0
     drag_coefficient_aoa_0 : 0.5 # drag coefficient at aoa 0
-starting_config:
+    engine_force : 300
+    agility : 100
     initial_throttle : 100 # percentage
     initial_pitch : 0 # in degrees
+    collision_radius : 6 # in pixels
+
+    # vectors
+    critical_aoa_lower_bound : [-15.0, -0.95] # aoa = angle of attack
+    critical_aoa_higher_bound : [19.0, 1.4]
     initial_velocity : [100.0, 0.0] # velocity vector
     initial_position : [100, 300] # coordinate of top left most pixel
-    position_px_deviation : 100 # amount of pixels the position can deviate
-    size : [24, 12]  # 6.13 : 3.25 irl
+
 bullet_config:
     sprite : "assets/bullet.png"
     speed : 10

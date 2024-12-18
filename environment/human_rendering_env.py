@@ -28,7 +28,11 @@ class HumanRenderingEnv(BaseEnv):
     """
 
     def __init__(
-        self
+        self,
+        plane_config: str="config/i-16_falangist.yaml",
+        env_config: str="config/default_env.yaml",
+        target_config: str="config/default_target.yaml",
+        seed: int=42
     )-> None:
         """
         Initializer for BaseEnv class.
@@ -46,7 +50,25 @@ class HumanRenderingEnv(BaseEnv):
         os.environ['SDL_VIDEO_WINDOW_POS'] = f"{0},{0}"
         pygame.init()
             
-        super().__init__()
+        super().__init__(
+            plane_config=plane_config,
+            env_config=env_config,
+            target_config=target_config,
+            seed=seed
+        )
+
+        # sprite data is not mandatory in config, 
+        # so we check these here
+        assert "sprite" in self._plane_data and \
+            "side_view_dir" in self._plane_data["sprite"] and \
+            "top_view_dir" in self._plane_data["sprite"], \
+            "Either `sprite`, `sprite : side_view_dir`, or `sprite : "\
+            "top_view_dir` are not present in plane data."
+        assert "sprite" in self._target_data, "`sprite` key not in target data"
+        assert "sprite" in self._env_data["ground"], \
+            "`sprite` key not in `ground` field in target data"
+        assert "sprite" in self._env_data["background"], \
+            "`sprite` key is not in background field in target data"
         
         self.screen = pygame.display.set_mode((1280, 720))
         
@@ -61,7 +83,7 @@ class HumanRenderingEnv(BaseEnv):
         Use environment data to create background object.
         """
         self._background_sprite = pygame.image.load(
-            "assets/background.png"
+            self._env_data["background"]["sprite"]
         )
         self._background_sprite = pygame.transform.scale(
             self._background_sprite,
@@ -69,22 +91,18 @@ class HumanRenderingEnv(BaseEnv):
         )
 
         self._target_sprite = pygame.transform.scale(
-            pygame.image.load("assets/target.png"), 
-            [40, 40]
+            pygame.image.load(self._target_data["sprite"]), 
+            self._target_data["size"]
         )
 
         self._bullet_sprite = pygame.transform.scale(
-            pygame.image.load("assets/bullet.png"),
-            [10, 10]
-        )
-
-        self._plane_sprite = pygame.image.load(
-                "assets/i16_falangist.png"
+            pygame.image.load(self._plane_data["bullet_config"]["sprite"]),
+            self._plane_data["bullet_config"]["size"]
         )
 
         self._plane_sprite = pygame.transform.scale(
-            self._plane_sprite,
-            [24, 12]
+            pygame.image.load(self._plane_data["sprite"]["side_view_dir"]),
+            self._plane_data["sprite"]["size"]
         )
 
     def _render(self)-> None:

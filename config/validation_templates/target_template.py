@@ -10,7 +10,7 @@ Minimal viable yaml file looks like (_'s are placeholders for data):
 ```yaml
 size : [_, _]
 position : [_, _]
-position_px_deviation : _
+coll_radius : _
 ```
 """
 
@@ -39,7 +39,7 @@ TARGET_TEMPLATE = {
             {'type' : 'integer', 'min' : 0}
         ]
     },
-    'position_px_deviation' : {
+    'coll_radius' : {
         'required' : True,
         'type' : 'number',
         'min' : 0

@@ -8,4 +8,4 @@
 sprite : "assets/target.png"
 size : [40, 40]
 position : [800, 500] # coordinate of top left most pixel
-position_px_deviation : 100 # amount of pixels the position can deviate
+coll_radius : 10 # amount of pixels around position used for collision

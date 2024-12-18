@@ -10,9 +10,9 @@ Minimal viable yaml file looks like (_'s are placeholders for data):
 ```yaml
 properties:
     mass : _
+    drag_constant : _
     engine_force : _
     agility : _
-    drag_constant : _
     lift_constant : _
     critical_aoa_lower_bound : [_, _] 
     critical_aoa_higher_bound : [_, _]
@@ -45,21 +45,24 @@ PLANE_TEMPLATE = {
                 'required' : False,
                 'type' : 'string'
             },
+            'size' : {
+                'required' : True,
+                'type' : 'list',
+                'minlength' : 2, 
+                'maxlength' : 2,
+                'items' : [
+                    {'type' : 'integer', 'min' : 0}, 
+                    {'type': 'integer', 'min' : 0}
+                ]
+            },
         }
     },
     'properties' : {
         'required' : True,
         'type' : 'dict',
         'schema' : {
+            # scalars:
             'mass' : {
-                'type' : 'number',
-                'min' : 0
-            },
-            'engine_force' : {
-                'type' : 'number',
-                'min' : 0
-            },
-            'agility' : {
                 'type' : 'number',
                 'min' : 0
             },
@@ -71,6 +74,35 @@ PLANE_TEMPLATE = {
                 'type' : 'number',
                 'min' : 0
             },
+            'lift_coefficient_aoa_0' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'drag_coefficient_aoa_0' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'engine_force' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'agility' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'initial_throttle' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'initial_pitch' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            'collision_radius' : {
+                'type' : 'number',
+                'min' : 0
+            },
+            # Vectors:
             'critical_aoa_lower_bound' : {
                 'required' : True,
                 'type' : 'list',
@@ -91,28 +123,6 @@ PLANE_TEMPLATE = {
                     {'type': 'number'}
                 ]
             },
-            'lift_coefficient_aoa_0' : {
-                'type' : 'number',
-                'min' : 0
-            },
-            'drag_coefficient_aoa_0' : {
-                'type' : 'number',
-                'min' : 0
-            }
-        }
-    },
-    'starting_config' : {
-        'required' : True,
-        'type' : 'dict',
-        'schema' : {
-            'initial_throttle' : {
-                'type' : 'number',
-                'min' : 0
-            },
-            'initial_pitch' : {
-                'type' : 'number',
-                'min' : 0
-            },
             'initial_velocity' : {
                 'required' : True,
                 'type' : 'list',
@@ -132,22 +142,7 @@ PLANE_TEMPLATE = {
                     {'type' : 'integer', 'min' : 0}, 
                     {'type': 'integer', 'min' : 0}
                 ]
-            },
-            'position_px_deviation' : {
-                'required' : True,
-                'type' : 'number',
-                'min' : 0
-            },
-            'size' : {
-                'required' : True,
-                'type' : 'list',
-                'minlength' : 2, 
-                'maxlength' : 2,
-                'items' : [
-                    {'type' : 'integer', 'min' : 0}, 
-                    {'type': 'integer', 'min' : 0}
-                ]
-            },
+            }
         }
     },
     'bullet_config' : {
