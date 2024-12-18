@@ -109,20 +109,29 @@ class HumanRenderingEnv(BaseEnv):
             self.screen.blit(
                 pygame.transform.rotate(
                     self._bullet_sprite,
-                    #TODO: pitch van de bullet nog niet goed doorgegeven
-                    bullet_scalar[8]
+                    # From unit vector to radians to degrees
+                    (
+                        np.degrees(
+                            np.arctan2(bullet_vector[2,0], bullet_vector[2,1])
+                        ) + 270
+                    ) % 360
                 ),
                 bullet_vector[3]
             )
 
-        #TODO: alle planes in blitten, pas aan zoals bullet aangepast
-        self.screen.blit(
-            pygame.transform.rotate(
-                self._plane_sprite,
-                self.entities.airplanes.scalars[0][8]
-            ),
-            self.entities.airplanes.vectors[0][3]
-        )
+        for plane_vector, plane_scalar in zip(
+            self.entities.airplanes.vectors,
+            self.entities.airplanes.scalars
+        ):
+            if plane_scalar[12] != -1:
+                continue
+            self.screen.blit(
+                pygame.transform.rotate(
+                    self._plane_sprite,
+                    plane_scalar[8]
+                ),
+                plane_vector[3]
+            )
         
         pygame.display.flip()
         
