@@ -39,6 +39,19 @@ class BaseEnv():
         target_config: str="config/default_target.yaml",
         seed: int=42
     )-> None:
+        """
+        Initializer for BaseEnv class.
+
+        @params:
+            - plane_config (str): Path to yaml file with plane 
+            configuration. See config/i-16_falangist.yaml for more info.
+            - env_config (str): Path to yaml file with environment 
+            configuration. See config/default_env.yaml for more info.
+            - target_config (str): Path to yaml file with target 
+            configuration. See config/default_target.yaml for more 
+            info.
+            - seed (int): seed for randomizer 
+        """
         np.random.seed(seed)
 
         # for saving the observation history, used in self.close()
@@ -71,7 +84,7 @@ class BaseEnv():
         ),f"A validation error occurred in the target data: {validator.errors}"
 
         # reserve memory for necessary member objects
-        self.entities = None
+        self._entities = None
         
         self._create_entities()
 
@@ -90,7 +103,7 @@ class BaseEnv():
                 [0,  window_dimensions[1]]
             ]
         )
-        self.entities = Entities(scalars, vectors, 1000, boundaries)
+        self._entities = Entities(scalars, vectors, 1000, boundaries)
 
     def _create_agent(self)-> tuple[np.ndarray, np.ndarray]:
         """
@@ -158,7 +171,7 @@ class BaseEnv():
         @returns:
             - float with reward.
         """
-        direction_to_target = self.entities.targets.vectors[0, 3] - state[:2]
+        direction_to_target = self._entities.targets.vectors[0, 3] - state[:2]
         
         unit_vector_to_target = direction_to_target / \
             np.linalg.norm(direction_to_target)
@@ -178,7 +191,7 @@ class BaseEnv():
         @returns:
             - boolean; True if terminal, False if not
         """
-        return np.all(self.entities.targets.scalars[:, 12] != -1)
+        return np.all(self._entities.targets.scalars[:, 12] != -1)
     
     def _check_if_truncated(self)-> bool:
         """
@@ -190,7 +203,7 @@ class BaseEnv():
         @returns:
             - boolean; True if truncated, False if not
         """
-        return np.all(self.entities.airplanes.scalars[:, 12] != -1)
+        return np.all(self._entities.airplanes.scalars[:, 12] != -1)
 
     def _calculate_observation(
             self
@@ -219,8 +232,8 @@ class BaseEnv():
              - bool with is_truncated
              - dict with info (always empty)
         """
-        pos = self.entities.airplanes.vectors[0, 3]
-        v = self.entities.airplanes.vectors[0, 2]
+        pos = self._entities.airplanes.vectors[0, 3]
+        v = self._entities.airplanes.vectors[0, 2]
         state = np.concatenate((pos, v), axis=None)
         
         is_terminated = self._check_if_terminated()
@@ -250,7 +263,7 @@ class BaseEnv():
         """
         Step function for environment.
 
-        Performs action on self._agent.
+        Performs action on agent.
 
         @params:
             - action (int): one of:
@@ -265,7 +278,7 @@ class BaseEnv():
             - np.ndarray with observation of resulting conditions
         """
         actions = np.array([[0, action]])
-        self.entities.tick(self._dt, actions)
+        self._entities.tick(self._dt, actions)
 
         # calculate, save, and return observation in current conditions
         observation = self._calculate_observation()
@@ -279,12 +292,12 @@ class BaseEnv():
         """
         Reset environment.
 
-        Will create completely new agent and target.
+        Will create completely new entities.
         Adds new page to the history dictionary.
         Returns initial state & info.
 
         @params:
-            - seed (int): seed used to spawn in the agent and target.
+            - seed (int): seed used to spawn in the entities.
         
         @returns:
             - np.ndarray with initial state 
@@ -300,8 +313,8 @@ class BaseEnv():
 
         # the agent's current coordinates are defined by the centre of 
         # its rect
-        pos = self.entities.airplanes.vectors[0, 3]
-        v = self.entities.airplanes.vectors[0, 2]
+        pos = self._entities.airplanes.vectors[0, 3]
+        v = self._entities.airplanes.vectors[0, 2]
         return np.concatenate((pos, v), axis=None), {}
 
     def close(

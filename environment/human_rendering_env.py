@@ -35,7 +35,7 @@ class HumanRenderingEnv(BaseEnv):
         seed: int=42
     )-> None:
         """
-        Initializer for BaseEnv class.
+        Initializer for HumanRenderingEnv class.
 
         @params:
             - plane_config (str): Path to yaml file with plane 
@@ -45,6 +45,7 @@ class HumanRenderingEnv(BaseEnv):
             - target_config (str): Path to yaml file with target 
             configuration. See config/default_target.yaml for more 
             info.
+            - seed (int): seed for randomizer 
         """
         # place pygame window in top left of monitor(s)
         os.environ['SDL_VIDEO_WINDOW_POS'] = f"{0},{0}"
@@ -115,12 +116,12 @@ class HumanRenderingEnv(BaseEnv):
         # self.screen.blit(self._floor.sprite, [0, self._floor.coll_elevation])
         self.screen.blit(
             self._target_sprite, 
-            self.entities.targets.vectors[:, 3][0]
+            self._entities.targets.vectors[:, 3][0]
         )
 
         for bullet_vector, bullet_scalar in zip(
-            self.entities.bullets.vectors,
-            self.entities.bullets.scalars
+            self._entities.bullets.vectors,
+            self._entities.bullets.scalars
             ):
             if bullet_scalar[11] == -1:
                 continue
@@ -138,8 +139,8 @@ class HumanRenderingEnv(BaseEnv):
             )
 
         for plane_vector, plane_scalar in zip(
-            self.entities.airplanes.vectors,
-            self.entities.airplanes.scalars
+            self._entities.airplanes.vectors,
+            self._entities.airplanes.scalars
         ):
             if plane_scalar[12] != -1:
                 continue
@@ -157,7 +158,7 @@ class HumanRenderingEnv(BaseEnv):
         """
         Step function for environment.
 
-        Performs action on self._agent and renders frame.
+        Performs action on agent and renders frame.
 
         @params:
             - action (int): one of:
@@ -181,12 +182,12 @@ class HumanRenderingEnv(BaseEnv):
         """
         Reset environment.
 
-        Will create completely new agent and target.
+        Will create completely new entities.
         Adds new page to the history dictionary
         return initial state & info. Renders the initial frame
 
         @params:
-            - seed (int): seed used to spawn in the agent and target.
+            - seed (int): seed used to spawn in the entities.
         
         @returns:
             - np.ndarray with initial state 

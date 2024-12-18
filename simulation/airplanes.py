@@ -10,6 +10,9 @@ class Airplanes:
 
     def tick(self, dt, actions):
         # update pitch unit vector
+        # TODO: dit kan fout gaan als pitch exact 0 is, ik weet niet zo goed of
+        #  dat mogelijk is en hoe erg het dan fout gaat, maar iig misschien
+        #  beter om hier iets met atan2 te doen ofzo
         self.vectors[:, 9, 0] = np.cos(-math.pi / 180 * self.scalars[:, 8])
         self.vectors[:, 9, 1] = np.sin(-math.pi / 180 * self.scalars[:, 8])
 
