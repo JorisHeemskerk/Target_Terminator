@@ -337,24 +337,25 @@ class BaseEnv():
             - save_figs (bool): Save the plots or not.
             - figs_stride (int): Stride for saving the figures.
         """
-        # prepare the output folder
-        if save_json or save_figs:
-            folder_path = "output/" \
-            f"{datetime.datetime.now().strftime('%d-%m-%Y_%H:%M')}"
-            os.mkdir(folder_path)
+        pass
+        # # prepare the output folder
+        # if save_json or save_figs:
+        #     folder_path = "output/" \
+        #     f"{datetime.datetime.now().strftime('%d-%m-%Y_%H:%M')}"
+        #     os.mkdir(folder_path)
 
-        # write all the observations to a json file
-        if save_json:
-            with open(
-                f"{folder_path}/_observation_history.json", "w"
-            ) as outfile: 
-                json.dump(self._observation_history, outfile, cls=NumpyEncoder)
+        # # write all the observations to a json file
+        # if save_json:
+        #     with open(
+        #         f"{folder_path}/_observation_history.json", "w"
+        #     ) as outfile: 
+        #         json.dump(self._observation_history, outfile, cls=NumpyEncoder)
 
-        # create all the graphs and save them to the `folder_path`
-        if save_figs:
-            create_path_plots(
-                folder_path, 
-                self._observation_history, 
-                self._env_data,
-                figs_stride
-            )
+        # # create all the graphs and save them to the `folder_path`
+        # if save_figs:
+        #     create_path_plots(
+        #         folder_path, 
+        #         self._observation_history, 
+        #         self._env_data,
+        #         figs_stride
+        #     )
