@@ -22,6 +22,9 @@ try:
 except:
     pass
 
+# add '' to the system path so the directory of the script that's being
+# run is also included
+# https://stackoverflow.com/questions/49559003/why-is-the-first-element-in-pythons-sys-path-an-empty-string
 sys.path.insert(0, '')
 
 from environment.base_env import BaseEnv
