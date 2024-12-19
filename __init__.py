@@ -22,6 +22,8 @@ try:
 except:
     pass
 
+sys.path.insert(0, '')
+
 from environment.base_env import BaseEnv
 from environment.human_rendering_env import HumanRenderingEnv
 from environment.human_control_env import HumanControlEnv
