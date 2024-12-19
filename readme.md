@@ -2,7 +2,7 @@
 
 
 # Tupolev Gaming
-By *Bas de Blok, Finn de Graaf, Max Visscher* & *Joris Heemskerk*
+By *Bas de Blok, Finn de Graaf* & *Joris Heemskerk*
 
 Created for the [Autonomy By Design (ADB)](https://canvas.hu.nl/courses/39869/pages/kennisroute-ai) cursus.
 
