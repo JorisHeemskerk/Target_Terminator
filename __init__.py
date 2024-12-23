@@ -14,18 +14,16 @@ import os
 
 # set the system path correctly, so the assets and configurations will
 # be correctly selected
-sys.path += ["Target_Terminator/", "Target_Terminator/assets/"]
+# add '' to the system path so the directory of the script that's being
+# run is also included
+# https://stackoverflow.com/questions/49559003/why-is-the-first-element-in-pythons-sys-path-an-empty-string
+sys.path += ["", "Target_Terminator/", "Target_Terminator/assets/"]
 
 # if possible, set the directory of the os
 try:
     os.chdir('Target_Terminator/')
 except:
     pass
-
-# add '' to the system path so the directory of the script that's being
-# run is also included
-# https://stackoverflow.com/questions/49559003/why-is-the-first-element-in-pythons-sys-path-an-empty-string
-sys.path.insert(0, '')
 
 from environment.base_env import BaseEnv
 from environment.human_rendering_env import HumanRenderingEnv
