@@ -59,7 +59,8 @@ class BaseEnv():
         self._current_iteration = 0
         self._observation_history = {self._current_iteration : []}
 
-        self._dt = 1/60
+        # delta with which to update the environment each tick
+        self._dt = 1 / 60
         
         # validate all of the provided config files
         validator = Validator()
