@@ -1,6 +1,7 @@
 from simulation.entities import Entities
 import debug_game_loop
 import debug_game_loop_headless
+import headless_2
 import numpy as np
 
 scalars = np.array(
@@ -32,4 +33,6 @@ actions = np.array([])
 entities = Entities(scalars, vectors, 1000, boundaries)
 # entities.tick(0, actions)
 
-debug_game_loop.run(entities)
+# debug_game_loop_headless.run(entities)
+# debug_game_loop.run(entities)
+headless_2.run(entities)

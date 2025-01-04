@@ -34,11 +34,12 @@ class Bullets:
         self.vectors[n:] = self.vectors[:-n]
         self.scalars[:n, 11] = 2
         self.scalars[:n, 12] = -1
-        self.scalars[:n, 2] = time.time()  # misschien is dit in ticks doen ipv s een idee voor optimalisatie
+        self.scalars[:n, 2] = 0
         self.vectors[:n] = vectors
 
     def despawn(self):
-        n = np.count_nonzero((time.time() - self.scalars[:self.n_bullets,2]) > 3)
+        self.scalars[:self.n_bullets, 2] += 1
+        n = np.count_nonzero(self.scalars[:self.n_bullets, 2] > 180)
         self.scalars[self.n_bullets-n:self.n_bullets, 11] = -1
         self.n_bullets -= n
         return n
