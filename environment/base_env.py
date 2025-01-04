@@ -126,7 +126,7 @@ class BaseEnv():
         """
         Create agent object for self.
 
-        Use plane adata to create Plane object.
+        Use plane data to create Plane object.
         
         @returns:
             - tuple with numpy arrays containing scalars and vectors
