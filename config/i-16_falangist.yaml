@@ -33,4 +33,3 @@ bullet_config:
     speed : 10
     lifetime : 500 # amount of pixels the plane may travel
     size : [10, 10]
-    
