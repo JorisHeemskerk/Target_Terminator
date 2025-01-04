@@ -106,53 +106,71 @@ class HumanRenderingEnv(BaseEnv):
             self._plane_data["sprite"]["size"]
         )
 
-    def _render(self)-> None:
+    def _render(self) -> None:
         """
         Render function for all of the graphical elements of the 
         environment.
         """
-        self.screen.blit(self._background_sprite, (0, 0))
-        # weggelaten, weet niet zeker of er rekening is gehouden met het bestaan van een vloer
-        # self.screen.blit(self._floor.sprite, [0, self._floor.coll_elevation])
-        self.screen.blit(
-            self._target_sprite, 
-            self._entities.targets.vectors[:, 3][0]
-        )
+        # gather all rotation instructions for bullets and save to tuple
+        alive_bullets = self._entities.bullets.vectors[
+            self._entities.bullets.scalars[:, 11] != -1
+        ]
+        rotate_instructions = np.degrees(
+            np.arctan2(alive_bullets[:, 2, 0], alive_bullets[:, 2, 1]) + 270
+        ) % 360
 
-        for bullet_vector, bullet_scalar in zip(
-            self._entities.bullets.vectors,
-            self._entities.bullets.scalars
-            ):
-            if bullet_scalar[11] == -1:
-                continue
-            self.screen.blit(
-                pygame.transform.rotate(
-                    self._bullet_sprite,
-                    # From unit vector to radians to degrees
-                    (
-                        np.degrees(
-                            np.arctan2(bullet_vector[2,0], bullet_vector[2,1])
-                        ) + 270
-                    ) % 360
-                ),
-                bullet_vector[3]
-            )
-
-        for plane_vector, plane_scalar in zip(
-            self._entities.airplanes.vectors,
-            self._entities.airplanes.scalars
+        blit_data_bullets = []
+        for bullet_vectors, rotate_instruction in zip(
+            alive_bullets, 
+            rotate_instructions
         ):
-            if plane_scalar[12] != -1:
-                continue
-            self.screen.blit(
-                pygame.transform.rotate(
-                    self._plane_sprite,
-                    plane_scalar[8]
-                ),
-                plane_vector[3]
+            rotated_sprite = pygame.transform.rotate(
+                self._bullet_sprite,
+                rotate_instruction
             )
+            # use coordinates as center for sprite
+            bullet_rect = rotated_sprite.get_rect()
+            bullet_rect.center = bullet_vectors[3]
+            blit_data_bullets.append((rotated_sprite, bullet_rect.topleft))
+
+        # gather all rotation instructions for planes and save to tuple
+        alive_airplanes = self._entities.airplanes.vectors[
+            self._entities.airplanes.scalars[:, 11] != -1
+        ]
+        rotate_instructions = self._entities.airplanes.scalars[
+            self._entities.airplanes.scalars[:, 11] != -1
+        ][:, 8]
+
+        blit_data_planes = []
+        for airplane_vectors, rotate_instruction in zip(
+            alive_airplanes, 
+            rotate_instructions
+        ):
+            rotated_sprite = pygame.transform.rotate(
+                self._plane_sprite,
+                rotate_instruction
+            )
+            # use coordinates as center for sprite
+            plane_rect = rotated_sprite.get_rect()
+            plane_rect.center = airplane_vectors[3]
+            blit_data_planes.append((rotated_sprite, plane_rect.topleft))
+
+        # put target sprite position in center
+        target_rect = self._target_sprite.get_rect()
+        target_rect.center = self._entities.targets.vectors[:, 3][0]
+
+        # blit all objects in order of background, target, bullet, plane
+        self.screen.blits(
+            blit_sequence=[
+                # Background
+                (self._background_sprite, (0, 0)),
+                # Target
+                (self._target_sprite, target_rect.topleft),
+            ] + blit_data_bullets + blit_data_planes
+        )
         
         pygame.display.flip()
+
         
     def step(self, action: int)-> np.ndarray:
         """
