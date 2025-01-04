@@ -32,6 +32,7 @@ class BaseEnv():
     + close()-> None
         Closes the environment and thereby outputs its entire history.
     """
+    
     def __init__(
         self, 
         plane_config: str="config/i-16_falangist.yaml",
