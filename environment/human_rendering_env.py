@@ -71,7 +71,9 @@ class HumanRenderingEnv(BaseEnv):
         assert "sprite" in self._env_data["background"], \
             "`sprite` key is not in background field in target data"
         
-        self.screen = pygame.display.set_mode((1280, 720))
+        self.screen = pygame.display.set_mode(
+            self._env_data["window_dimensions"]
+        )
         
         pygame.display.set_caption('Target terminator')
 
