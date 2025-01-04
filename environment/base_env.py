@@ -11,6 +11,13 @@ from utils.create_path_plots import create_path_plots
 import config.validation_templates as templates
 
 
+# Define the maximum number of entities that can spawn at the same time.
+# Dead bullet entities will not count towards the maximum. Meaning the
+# chances of going beyond this limit are very slim.
+# !!! CAUTION !!!: 
+#   Increasing this number may have significant impact on runtime!
+MAX_ENTITIES = 1000
+
 class BaseEnv():
     """
     Base environment class.
@@ -91,6 +98,13 @@ class BaseEnv():
         self._create_entities()
 
     def _create_entities(self)-> None:
+        """
+        Creates plane and target entities.
+
+        Uses self._create_agent() and self._create_target() to do this.
+        Combines scalars of these two objects into two big matrices, 
+        which it uses to create an Entities object.
+        """
         agent_scalars, agent_vectors = self._create_agent()
         target_scalars, target_vectors = self._create_target()
         scalars = np.array([agent_scalars, target_scalars])
@@ -105,14 +119,19 @@ class BaseEnv():
                 [0,  window_dimensions[1]]
             ]
         )
-        self._entities = Entities(scalars, vectors, 1000, boundaries)
+
+        self._entities = Entities(scalars, vectors, MAX_ENTITIES, boundaries)
 
     def _create_agent(self)-> tuple[np.ndarray, np.ndarray]:
         """
         Create agent object for self.
 
         Use plane adata to create Plane object.
+        
+        @returns:
+            - tuple with numpy arrays containing scalars and vectors
         """
+
         scalars = np.array(list(self._plane_data["properties"].values())[:10])
         # the extra data is [aoa_degree, entity_type, coll_flag, debug]
         scalars = np.concatenate((scalars, np.array([0, 0, -1, 0])))
@@ -129,6 +148,9 @@ class BaseEnv():
         Create target object for self.
 
         Use target data to create Target object.
+
+        @returns:
+            - tuple with numpy arrays containing scalars and vectors
         """
         scalars = np.array(list(self._target_data.values())[3])
         # the only data needed is the collision radius
@@ -339,25 +361,24 @@ class BaseEnv():
             - save_figs (bool): Save the plots or not.
             - figs_stride (int): Stride for saving the figures.
         """
-        pass
-        # # prepare the output folder
-        # if save_json or save_figs:
-        #     folder_path = "output/" \
-        #     f"{datetime.datetime.now().strftime('%d-%m-%Y_%H:%M')}"
-        #     os.mkdir(folder_path)
+        # prepare the output folder
+        if save_json or save_figs:
+            folder_path = "output/" \
+            f"{datetime.datetime.now().strftime('%d-%m-%Y_%H:%M')}"
+            os.mkdir(folder_path)
 
-        # # write all the observations to a json file
-        # if save_json:
-        #     with open(
-        #         f"{folder_path}/_observation_history.json", "w"
-        #     ) as outfile: 
-        #         json.dump(self._observation_history, outfile, cls=NumpyEncoder)
+        # write all the observations to a json file
+        if save_json:
+            with open(
+                f"{folder_path}/_observation_history.json", "w"
+            ) as outfile: 
+                json.dump(self._observation_history, outfile, cls=NumpyEncoder)
 
-        # # create all the graphs and save them to the `folder_path`
-        # if save_figs:
-        #     create_path_plots(
-        #         folder_path, 
-        #         self._observation_history, 
-        #         self._env_data,
-        #         figs_stride
-        #     )
+        # create all the graphs and save them to the `folder_path`
+        if save_figs:
+            create_path_plots(
+                folder_path, 
+                self._observation_history, 
+                self._env_data,
+                figs_stride
+            )
