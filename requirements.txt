@@ -1,0 +1,5 @@
+jsonschema==4.23.0
+matplotlib==3.10.0
+pygame==2.6.1
+PyYAML==6.0.2
+scikit-learn==1.6.0
